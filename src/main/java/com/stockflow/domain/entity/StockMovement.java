@@ -3,6 +3,7 @@ package com.stockflow.domain.entity;
 import com.stockflow.domain.enums.MovementType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class StockMovement extends BaseEntity {
 
     @Column(name = "tenant_id", nullable = false)

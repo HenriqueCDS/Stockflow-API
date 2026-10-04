@@ -2,6 +2,7 @@ package com.stockflow.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Product extends BaseEntity {
 
     @Column(name = "tenant_id", nullable = false)

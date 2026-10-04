@@ -3,6 +3,7 @@ package com.stockflow.domain.entity;
 import com.stockflow.domain.enums.InvoiceStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Invoice extends BaseEntity {
 
     @Column(name = "tenant_id", nullable = false)
