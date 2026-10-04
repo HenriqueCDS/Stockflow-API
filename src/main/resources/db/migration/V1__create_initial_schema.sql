@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE companies (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        VARCHAR(100) NOT NULL,
-    cnpj        CHAR(14) NOT NULL UNIQUE,
+    cnpj        VARCHAR(14) NOT NULL UNIQUE,
     tenant_id   UUID NOT NULL UNIQUE,
     email       VARCHAR(100),
     phone       VARCHAR(20),
@@ -63,9 +63,9 @@ CREATE TABLE products (
 CREATE TABLE invoices (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id     UUID NOT NULL,
-    invoice_key   CHAR(44),
+    invoice_key   VARCHAR(44),
     supplier_name VARCHAR(255),
-    supplier_cnpj CHAR(14),
+    supplier_cnpj VARCHAR(14),
     purchase_date DATE,
     total_value   NUMERIC(15,2),
     qr_code_url   VARCHAR(2048),
