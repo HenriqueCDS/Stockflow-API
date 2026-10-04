@@ -6,14 +6,17 @@ import com.stockflow.domain.entity.InvoiceItem;
 import com.stockflow.domain.entity.Product;
 import com.stockflow.domain.enums.InvoiceStatus;
 import com.stockflow.exception.DuplicateResourceException;
+import com.stockflow.exception.FiscalException;
 import com.stockflow.fiscal.dto.NfceDTO;
 import com.stockflow.fiscal.dto.NfceItemDTO;
+import com.stockflow.fiscal.dto.NfceKey;
 import com.stockflow.fiscal.service.FiscalService;
 import com.stockflow.mapper.InvoiceMapper;
 import com.stockflow.repository.InvoiceRepository;
 import com.stockflow.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,18 +36,33 @@ public class ProcessNfceUseCase {
 
     @Transactional
     public InvoiceResponseDTO execute(UUID tenantId, String qrCodeContent) {
+        // The key embedded in the QR is authoritative: validate it and dedupe before any external call.
+        NfceKey qrKey = NfceKey.extractRaw(qrCodeContent)
+            .map(raw -> NfceKey.parse(raw).orElseThrow(() ->
+                new FiscalException("Invalid NFC-e access key in QR Code", HttpStatus.BAD_REQUEST)))
+            .orElse(null);
+
+        if (qrKey != null && invoiceRepository.existsByInvoiceKeyAndTenantId(qrKey.value(), tenantId)) {
+            throw new DuplicateResourceException("Invoice", "key", qrKey.value());
+        }
+
         NfceDTO nfceData = fiscalService.processQrCode(qrCodeContent);
 
-        if (nfceData.getInvoiceKey() != null &&
-            invoiceRepository.existsByInvoiceKeyAndTenantId(nfceData.getInvoiceKey(), tenantId)) {
-            throw new DuplicateResourceException("Invoice", "key", nfceData.getInvoiceKey());
+        String invoiceKey = qrKey != null ? qrKey.value() : nfceData.getInvoiceKey();
+        if (qrKey == null && invoiceKey != null &&
+            invoiceRepository.existsByInvoiceKeyAndTenantId(invoiceKey, tenantId)) {
+            throw new DuplicateResourceException("Invoice", "key", invoiceKey);
         }
+
+        String supplierCnpj = nfceData.getSupplierCnpj() != null
+            ? nfceData.getSupplierCnpj()
+            : (qrKey != null ? qrKey.cnpj() : null);
 
         Invoice invoice = Invoice.builder()
             .tenantId(tenantId)
-            .invoiceKey(nfceData.getInvoiceKey())
+            .invoiceKey(invoiceKey)
             .supplierName(nfceData.getSupplierName())
-            .supplierCnpj(nfceData.getSupplierCnpj())
+            .supplierCnpj(supplierCnpj)
             .purchaseDate(nfceData.getPurchaseDate())
             .totalValue(nfceData.getTotalValue())
             .qrCodeUrl(qrCodeContent.startsWith("http") ? qrCodeContent : null)
@@ -55,7 +73,7 @@ public class ProcessNfceUseCase {
         invoice.setItems(items);
 
         invoice = invoiceRepository.save(invoice);
-        log.info("NFC-e processed: tenantId={}, invoiceKey={}, items={}", tenantId, nfceData.getInvoiceKey(), items.size());
+        log.info("NFC-e processed: tenantId={}, invoiceKey={}, items={}", tenantId, invoiceKey, items.size());
 
         return invoiceMapper.toResponse(invoice);
     }
