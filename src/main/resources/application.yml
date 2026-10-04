@@ -41,6 +41,10 @@ security:
     access-token-expiration-ms: ${JWT_ACCESS_EXP_MS:900000}      # 15 minutes
     refresh-token-expiration-ms: ${JWT_REFRESH_EXP_MS:604800000} # 7 days
 
+fiscal:
+  # Hosts the server may contact when resolving a QR Code URL (SSRF allowlist)
+  allowed-host-suffixes: ${FISCAL_ALLOWED_HOST_SUFFIXES:.gov.br,.focusnfe.com.br}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

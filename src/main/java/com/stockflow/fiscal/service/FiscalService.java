@@ -18,9 +18,11 @@ public class FiscalService {
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[^\\s\"'<>]+");
 
     private final List<FiscalProvider> providers;
+    private final FiscalUrlValidator urlValidator;
 
-    public FiscalService(List<FiscalProvider> providers) {
+    public FiscalService(List<FiscalProvider> providers, FiscalUrlValidator urlValidator) {
         this.providers = providers;
+        this.urlValidator = urlValidator;
     }
 
     public NfceDTO processQrCode(String qrCodeContent) {
@@ -34,6 +36,7 @@ public class FiscalService {
     }
 
     private NfceDTO fetchFromProvider(String url) {
+        urlValidator.validate(url);
         FiscalProvider provider = providers.stream()
             .filter(p -> p.supports(url))
             .findFirst()
@@ -56,9 +59,11 @@ public class FiscalService {
             throw new FiscalException("QR Code content is empty", HttpStatus.BAD_REQUEST);
         }
 
+        content = content.trim();
+
         // Direct URL
         if (content.startsWith("http")) {
-            return content.trim();
+            return content;
         }
 
         // URL embedded in content
