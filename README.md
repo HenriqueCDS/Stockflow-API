@@ -45,6 +45,8 @@ Código em `src/main/java/com/stockflow`:
 
 **Modelo de dados** (migrations em `src/main/resources/db/migration`): `companies`, `users`, `products`, `invoices`, `invoice_items`, `stock_movements`. Perfis de usuário: `ADMIN`, `USER`, `VIEWER`.
 
+Cada produto guarda o usuário que o cadastrou (`products.created_by`, V4). Produtos criados automaticamente pela NFC-e ficam vinculados ao usuário que processou a nota. Produtos anteriores à V4 ficam com `created_by` nulo.
+
 ## Executando
 
 ### Docker Compose (app + PostgreSQL, perfil `dev`)
@@ -71,7 +73,7 @@ docker compose up -d postgres
 mvn test
 ```
 
-Os testes de integração usam Testcontainers, então precisam do Docker em execução.
+Os testes de integração usam Testcontainers, então precisam do Docker em execução. Se o Docker estiver rodando mas o `AuthControllerIntegrationTest` falhar com `Could not find a valid Docker environment` (HTTP 400 no npipe), é incompatibilidade entre o cliente do Testcontainers e a versão atual do Docker Desktop, não erro de código. Os demais testes rodam normalmente.
 
 ## Perfis e dados de exemplo
 
@@ -89,6 +91,17 @@ Usuários de demonstração (tenant `Demo Company`), senha **`Demo@1234`**:
 | `viewer@stockflow.com` | VIEWER |
 
 > As senhas de demonstração são apenas para desenvolvimento.
+
+### Banco de dev já existente após a V4
+
+A seed `V100__dev_seed.sql` roda só no perfil `dev`. Se o banco de dev já tinha a V100 aplicada antes da V4 existir, a aplicação não sobe com `Detected resolved migration not applied to database: 4`. Não existe migration a corrigir: o banco local precisa ser recriado. Isso apaga os dados de dev, inclusive os que você tiver criado:
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+```
+
+Em produção não há esse problema, porque a seed não é carregada.
 
 ## Configuração
 
@@ -122,11 +135,24 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 |-------|-----------|
 | **Auth** `/api/v1/auth` | `POST /register`, `POST /login`, `POST /refresh`, `POST /logout` |
 | **Company** `/api/v1/company` | `GET`, `PUT` |
-| **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação), `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
+| **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação; `mine=true` lista só os produtos cadastrados pelo usuário logado), `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
+| **User Profile** `/api/v1/users/me` | `GET`, `PUT` (altera `name`) |
 | **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
 | **Invoices** `/api/v1/invoices` | `GET`, `GET /{id}`, `POST /{id}/reject`, `DELETE /{id}` |
 | **Stock Movements** `/api/v1/stock-movements` | `POST /adjust`, `GET`, `GET /product/{productId}` |
 | **Dashboard** `/api/v1/dashboard` | `GET` (KPIs, produtos mais movimentados, movimentos recentes) |
+
+### Perfil do usuário
+
+`GET /api/v1/users/me` retorna `id`, `name`, `email` e `role` do usuário do token. `PUT /api/v1/users/me` recebe `{"name": "..."}` (obrigatório, até 100 caracteres) e devolve o perfil atualizado. O e-mail, o perfil de acesso e a senha não são alterados por este endpoint.
+
+Esta rota fica fora de `/api/v1/auth/**` de propósito: `/auth/**` é público no `SecurityConfig`.
+
+### Produtos vinculados ao usuário
+
+- `POST /api/v1/products` grava o usuário do token em `createdBy`. Esse campo também aparece em `GET` e `GET /{id}`.
+- `GET /api/v1/products?mine=true` lista só os produtos cadastrados pelo usuário logado. Pode ser combinado com os demais filtros e com a paginação.
+- Edição e exclusão não são restritas ao criador: qualquer usuário do tenant continua podendo alterar ou excluir produtos de outros usuários.
 
 ### Exemplo rápido
 
@@ -138,6 +164,12 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 # listar produtos
 curl http://localhost:8080/api/v1/products -H "Authorization: Bearer <accessToken>"
+
+# listar só os produtos cadastrados pelo usuário logado
+curl "http://localhost:8080/api/v1/products?mine=true" -H "Authorization: Bearer <accessToken>"
+
+# perfil do usuário logado
+curl http://localhost:8080/api/v1/users/me -H "Authorization: Bearer <accessToken>"
 ```
 
 ## Observabilidade
