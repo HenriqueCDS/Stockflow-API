@@ -26,7 +26,7 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @Transactional
-    public ProductResponseDTO create(UUID tenantId, ProductRequestDTO request) {
+    public ProductResponseDTO create(UUID tenantId, UUID userId, ProductRequestDTO request) {
         if (request.ean() != null && !request.ean().isBlank()) {
             productRepository.findByTenantIdAndEanAndDeletedAtIsNull(tenantId, request.ean())
                 .ifPresent(p -> { throw new DuplicateResourceException("Product", "ean", request.ean()); });
@@ -34,6 +34,7 @@ public class ProductService {
 
         Product product = productMapper.toEntity(request);
         product.setTenantId(tenantId);
+        product.setCreatedBy(userId);
 
         return productMapper.toResponse(productRepository.save(product));
     }
@@ -78,17 +79,18 @@ public class ProductService {
             .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
     }
 
-    public Product findOrCreateByEan(UUID tenantId, String ean, String name, String unit) {
+    public Product findOrCreateByEan(UUID tenantId, UUID userId, String ean, String name, String unit) {
         if (ean != null && !ean.isBlank()) {
             return productRepository.findByTenantIdAndEanAndDeletedAtIsNull(tenantId, ean)
-                .orElseGet(() -> createAutoProduct(tenantId, name, ean, unit));
+                .orElseGet(() -> createAutoProduct(tenantId, userId, name, ean, unit));
         }
-        return createAutoProduct(tenantId, name, ean, unit);
+        return createAutoProduct(tenantId, userId, name, ean, unit);
     }
 
-    private Product createAutoProduct(UUID tenantId, String name, String ean, String unit) {
+    private Product createAutoProduct(UUID tenantId, UUID userId, String name, String ean, String unit) {
         Product product = Product.builder()
             .tenantId(tenantId)
+            .createdBy(userId)
             .name(name)
             .ean(ean)
             .unit(unit)

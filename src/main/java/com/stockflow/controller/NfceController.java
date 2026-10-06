@@ -47,7 +47,8 @@ public class NfceController {
         @Valid @RequestBody NfceProcessRequestDTO body,
         HttpServletRequest request) {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
-        InvoiceResponseDTO invoice = processNfceUseCase.execute(tenantId, body.qrCode());
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
+        InvoiceResponseDTO invoice = processNfceUseCase.execute(tenantId, userId, body.qrCode());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.ok("Invoice fetched successfully", invoice));
     }
 
@@ -63,8 +64,9 @@ public class NfceController {
             throw new FiscalException("Image file is empty", HttpStatus.BAD_REQUEST);
         }
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
         String qrContent = qrCodeImageDecoder.decode(file.getBytes());
-        InvoiceResponseDTO invoice = processNfceUseCase.execute(tenantId, qrContent);
+        InvoiceResponseDTO invoice = processNfceUseCase.execute(tenantId, userId, qrContent);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.ok("Invoice fetched successfully", invoice));
     }
 

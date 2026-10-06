@@ -33,6 +33,9 @@ public class ProductSpecification {
                 if (filter.active() != null) {
                     predicates.add(cb.equal(root.get("active"), filter.active()));
                 }
+                if (filter.createdBy() != null) {
+                    predicates.add(cb.equal(root.get("createdBy"), filter.createdBy()));
+                }
                 if (Boolean.TRUE.equals(filter.belowMinimum())) {
                     predicates.add(cb.and(
                         cb.greaterThan(root.get("minimumStock"), java.math.BigDecimal.ZERO),

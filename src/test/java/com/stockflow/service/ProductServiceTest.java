@@ -31,11 +31,13 @@ class ProductServiceTest {
     @InjectMocks ProductService productService;
 
     private UUID tenantId;
+    private UUID userId;
     private Product testProduct;
 
     @BeforeEach
     void setUp() {
         tenantId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         testProduct = Product.builder()
             .tenantId(tenantId)
             .name("Test Product")
@@ -57,7 +59,7 @@ class ProductServiceTest {
 
         ProductRequestDTO request = new ProductRequestDTO("Product", "7891234567890", null, "UN", BigDecimal.ZERO);
 
-        assertThatThrownBy(() -> productService.create(tenantId, request))
+        assertThatThrownBy(() -> productService.create(tenantId, userId, request))
             .isInstanceOf(DuplicateResourceException.class);
     }
 
@@ -67,7 +69,7 @@ class ProductServiceTest {
         ProductResponseDTO expectedResponse = new ProductResponseDTO(
             UUID.randomUUID(), "New Product", "1234567890123", null, "UN",
             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-            true, false, null);
+            true, false, null, userId);
 
         when(productRepository.findByTenantIdAndEanAndDeletedAtIsNull(any(), anyString()))
             .thenReturn(Optional.empty());
@@ -75,8 +77,31 @@ class ProductServiceTest {
         when(productRepository.save(any())).thenReturn(testProduct);
         when(productMapper.toResponse(any())).thenReturn(expectedResponse);
 
-        ProductResponseDTO result = productService.create(tenantId, request);
+        ProductResponseDTO result = productService.create(tenantId, userId, request);
         assertThat(result.name()).isEqualTo("New Product");
+    }
+
+    @Test
+    void create_shouldLinkProductToCreatingUser() {
+        ProductRequestDTO request = new ProductRequestDTO("New Product", null, null, "UN", BigDecimal.ZERO);
+        when(productMapper.toEntity(any())).thenReturn(testProduct);
+        when(productRepository.save(any())).thenReturn(testProduct);
+
+        productService.create(tenantId, userId, request);
+
+        verify(productRepository).save(argThat(p -> userId.equals(p.getCreatedBy()) && tenantId.equals(p.getTenantId())));
+    }
+
+    @Test
+    void findOrCreateByEan_shouldLinkAutoCreatedProductToUser() {
+        when(productRepository.findByTenantIdAndEanAndDeletedAtIsNull(any(), anyString()))
+            .thenReturn(Optional.empty());
+        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Product result = productService.findOrCreateByEan(tenantId, userId, "7891234567890", "Arroz", "KG");
+
+        assertThat(result.getCreatedBy()).isEqualTo(userId);
+        assertThat(result.getTenantId()).isEqualTo(tenantId);
     }
 
     @Test
