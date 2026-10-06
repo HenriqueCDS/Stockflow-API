@@ -13,6 +13,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmailAndDeletedAtIsNull(String email);
 
+    Optional<User> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+
     @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId AND u.deletedAt IS NULL")
     java.util.List<User> findAllByTenantId(UUID tenantId);
 }
