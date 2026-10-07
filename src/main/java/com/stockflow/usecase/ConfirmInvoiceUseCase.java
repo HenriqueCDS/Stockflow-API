@@ -40,7 +40,7 @@ public class ConfirmInvoiceUseCase {
         String reference = "INVOICE#" + invoiceId;
 
         for (InvoiceItem item : invoice.getItems()) {
-            if (item.getProduct() == null) continue;
+            if (item.getProduct() == null || item.isIgnored()) continue;
             stockMovementService.recordEntry(
                 tenantId,
                 userId,

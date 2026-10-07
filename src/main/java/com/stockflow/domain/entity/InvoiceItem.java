@@ -45,4 +45,9 @@ public class InvoiceItem extends BaseEntity {
 
     @Column(length = 20)
     private String unit;
+
+    // Marcado na revisao (antes de confirmar): item excluido, nao gera movimento de estoque.
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean ignored = false;
 }

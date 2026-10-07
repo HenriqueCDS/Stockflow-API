@@ -137,7 +137,7 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 | **Company** `/api/v1/company` | `GET` (inclui `inviteCode`), `PUT`, `GET /members`, `DELETE /members/{userId}` (dono), `POST /invite-code/rotate` (dono) |
 | **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação; `mine=true` lista só os produtos cadastrados pelo usuário logado), `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
 | **User Profile** `/api/v1/users/me` | `GET`, `PUT` (altera `name`) |
-| **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
+| **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `PATCH /{invoiceId}/items/{itemId}` (revisar item antes de confirmar), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
 | **Invoices** `/api/v1/invoices` | `GET`, `GET /{id}`, `POST /{id}/reject`, `DELETE /{id}` |
 | **Stock Movements** `/api/v1/stock-movements` | `POST /adjust`, `GET`, `GET /product/{productId}` |
 | **Dashboard** `/api/v1/dashboard` | `GET` (KPIs, produtos mais movimentados, movimentos recentes) |
@@ -162,6 +162,24 @@ Esta rota fica fora de `/api/v1/auth/**` de propósito: `/auth/**` é público n
 - `POST /api/v1/products` grava o usuário do token em `createdBy`. Esse campo também aparece em `GET` e `GET /{id}`.
 - `GET /api/v1/products?mine=true` lista só os produtos cadastrados pelo usuário logado. Pode ser combinado com os demais filtros e com a paginação.
 - Edição e exclusão não são restritas ao criador: qualquer usuário do tenant continua podendo alterar ou excluir produtos de outros usuários.
+
+### Revisão de itens antes de confirmar
+
+Entre `POST /nfce/process` (ou `/process/image`) e `POST /{invoiceId}/confirm`, cada item pode ser ajustado com `PATCH /api/v1/nfce/{invoiceId}/items/{itemId}` — só funciona enquanto a nota está `FETCHED`. Todos os campos do corpo são opcionais; só o que for enviado é aplicado:
+
+```json
+{
+  "productName": "Arroz Tipo 1 5kg",
+  "mergeIntoProductId": "uuid-de-um-produto-existente",
+  "quantity": 2,
+  "ignored": false
+}
+```
+
+- `productName`: renomeia o item (não altera o produto já vinculado).
+- `mergeIntoProductId`: troca o produto do item para um já existente no tenant — o produto antigo (se foi criado automaticamente pela nota) continua no catálogo, sem exclusão automática.
+- `quantity`: ajusta a quantidade e recalcula `totalValue` (`quantity × unitValue`).
+- `ignored: true`: exclui o item da confirmação — ao confirmar a nota, nenhum movimento de estoque é gerado para ele.
 
 ### Movimentos vinculados ao usuário
 

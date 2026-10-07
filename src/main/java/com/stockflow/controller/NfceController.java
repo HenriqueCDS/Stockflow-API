@@ -1,6 +1,7 @@
 package com.stockflow.controller;
 
 import com.stockflow.domain.dto.common.ApiResponseDTO;
+import com.stockflow.domain.dto.invoice.InvoiceItemReviewRequestDTO;
 import com.stockflow.domain.dto.invoice.InvoiceResponseDTO;
 import com.stockflow.domain.dto.invoice.NfceProcessRequestDTO;
 import com.stockflow.exception.FiscalException;
@@ -68,6 +69,21 @@ public class NfceController {
         String qrContent = qrCodeImageDecoder.decode(file.getBytes());
         InvoiceResponseDTO invoice = processNfceUseCase.execute(tenantId, userId, qrContent);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.ok("Invoice fetched successfully", invoice));
+    }
+
+    @PatchMapping("/{invoiceId}/items/{itemId}")
+    @Operation(
+        summary = "Review an invoice item before confirming",
+        description = "Rename the item, re-link it to an existing product (merge), adjust the quantity, or mark it as ignored (excluded from the stock entry when the invoice is confirmed). Only allowed while the invoice is FETCHED."
+    )
+    public ResponseEntity<ApiResponseDTO<InvoiceResponseDTO>> reviewItem(
+        @PathVariable UUID invoiceId,
+        @PathVariable UUID itemId,
+        @Valid @RequestBody InvoiceItemReviewRequestDTO body,
+        HttpServletRequest request) {
+        var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        InvoiceResponseDTO invoice = invoiceService.reviewItem(tenantId, invoiceId, itemId, body);
+        return ResponseEntity.ok(ApiResponseDTO.ok("Item updated", invoice));
     }
 
     @PostMapping("/{invoiceId}/confirm")

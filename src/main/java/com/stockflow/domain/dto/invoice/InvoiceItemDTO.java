@@ -11,5 +11,6 @@ public record InvoiceItemDTO(
     BigDecimal quantity,
     BigDecimal unitValue,
     BigDecimal totalValue,
-    String unit
+    String unit,
+    boolean ignored
 ) {}

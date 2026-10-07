@@ -1,8 +1,11 @@
 package com.stockflow.service;
 
 import com.stockflow.domain.dto.common.PageResponseDTO;
+import com.stockflow.domain.dto.invoice.InvoiceItemReviewRequestDTO;
 import com.stockflow.domain.dto.invoice.InvoiceResponseDTO;
 import com.stockflow.domain.entity.Invoice;
+import com.stockflow.domain.entity.InvoiceItem;
+import com.stockflow.domain.entity.Product;
 import com.stockflow.domain.enums.InvoiceStatus;
 import com.stockflow.exception.BusinessException;
 import com.stockflow.exception.ResourceNotFoundException;
@@ -22,6 +25,7 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;
+    private final ProductService productService;
 
     @Transactional(readOnly = true)
     public PageResponseDTO<InvoiceResponseDTO> list(UUID tenantId, Pageable pageable) {
@@ -59,5 +63,36 @@ public class InvoiceService {
     public Invoice findByTenantAndId(UUID tenantId, UUID invoiceId) {
         return invoiceRepository.findByIdAndTenantIdAndDeletedAtIsNull(invoiceId, tenantId)
             .orElseThrow(() -> new ResourceNotFoundException("Invoice", invoiceId));
+    }
+
+    @Transactional
+    public InvoiceResponseDTO reviewItem(UUID tenantId, UUID invoiceId, UUID itemId, InvoiceItemReviewRequestDTO request) {
+        Invoice invoice = findByTenantAndId(tenantId, invoiceId);
+        if (invoice.getStatus() != InvoiceStatus.FETCHED) {
+            throw new BusinessException("Only FETCHED invoices can be reviewed", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        InvoiceItem item = invoice.getItems().stream()
+            .filter(i -> i.getId().equals(itemId))
+            .findFirst()
+            .orElseThrow(() -> new ResourceNotFoundException("InvoiceItem", itemId));
+
+        if (request.productName() != null && !request.productName().isBlank()) {
+            item.setProductName(request.productName());
+        }
+        if (request.quantity() != null) {
+            item.setQuantity(request.quantity());
+            item.setTotalValue(request.quantity().multiply(item.getUnitValue()));
+        }
+        if (request.mergeIntoProductId() != null) {
+            Product target = productService.findByTenantAndId(tenantId, request.mergeIntoProductId());
+            item.setProduct(target);
+        }
+        if (request.ignored() != null) {
+            item.setIgnored(request.ignored());
+        }
+
+        invoice = invoiceRepository.save(invoice);
+        return invoiceMapper.toResponse(invoice);
     }
 }
