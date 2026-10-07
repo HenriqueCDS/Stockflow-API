@@ -4,6 +4,7 @@ import com.stockflow.domain.dto.stock.StockAdjustmentRequestDTO;
 import com.stockflow.domain.entity.Product;
 import com.stockflow.domain.entity.StockMovement;
 import com.stockflow.domain.enums.MovementType;
+import com.stockflow.exception.BusinessException;
 import com.stockflow.mapper.StockMovementMapper;
 import com.stockflow.repository.StockMovementRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -67,5 +69,30 @@ class StockMovementServiceTest {
         stockMovementService.adjust(tenantId, userId, request);
 
         verify(stockMovementRepository).save(argThat(m -> userId.equals(m.getCreatedBy())));
+    }
+
+    @Test
+    void quickExit_shouldSubtractStockAndStampAuthorAndType() {
+        UUID productId = UUID.randomUUID();
+        when(productService.findByTenantAndId(tenantId, productId)).thenReturn(product);
+        when(stockMovementRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        stockMovementService.quickExit(tenantId, userId, productId, MovementType.USED, BigDecimal.ONE);
+
+        assertThat(product.getCurrentStock()).isEqualTo(new BigDecimal("9"));
+        verify(stockMovementRepository).save(argThat(m ->
+            userId.equals(m.getCreatedBy()) && m.getType() == MovementType.USED));
+    }
+
+    @Test
+    void quickExit_shouldThrowWhenInsufficientStock() {
+        UUID productId = UUID.randomUUID();
+        product.setCurrentStock(BigDecimal.ZERO);
+        when(productService.findByTenantAndId(tenantId, productId)).thenReturn(product);
+
+        assertThatThrownBy(() -> stockMovementService.quickExit(
+            tenantId, userId, productId, MovementType.DISCARDED, BigDecimal.ONE))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("Insufficient stock");
     }
 }

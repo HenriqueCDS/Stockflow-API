@@ -54,7 +54,7 @@ public class StockMovementService {
         Product product = productService.findByTenantAndId(tenantId, request.productId());
         BigDecimal stockBefore = product.getCurrentStock();
 
-        if (request.type() == MovementType.EXIT || request.type() == MovementType.RETURN) {
+        if (isExitType(request.type())) {
             if (product.getCurrentStock().compareTo(request.quantity()) < 0) {
                 throw new BusinessException("Insufficient stock for this movement");
             }
@@ -77,6 +77,36 @@ public class StockMovementService {
             .build();
 
         return stockMovementMapper.toResponse(stockMovementRepository.save(movement));
+    }
+
+    // "Usei" / "Descartei": saida em 1 toque, sem exigir tipo/custo/notas do /adjust generico.
+    @Transactional
+    public StockMovementResponseDTO quickExit(UUID tenantId, UUID userId, UUID productId,
+                                              MovementType type, BigDecimal quantity) {
+        Product product = productService.findByTenantAndId(tenantId, productId);
+        BigDecimal stockBefore = product.getCurrentStock();
+
+        if (stockBefore.compareTo(quantity) < 0) {
+            throw new BusinessException("Insufficient stock for this movement");
+        }
+        product.setCurrentStock(stockBefore.subtract(quantity));
+
+        StockMovement movement = StockMovement.builder()
+            .tenantId(tenantId)
+            .product(product)
+            .type(type)
+            .quantity(quantity)
+            .stockBefore(stockBefore)
+            .stockAfter(product.getCurrentStock())
+            .createdBy(userId)
+            .build();
+
+        return stockMovementMapper.toResponse(stockMovementRepository.save(movement));
+    }
+
+    private boolean isExitType(MovementType type) {
+        return type == MovementType.EXIT || type == MovementType.RETURN
+            || type == MovementType.USED || type == MovementType.DISCARDED;
     }
 
     @Transactional(readOnly = true)

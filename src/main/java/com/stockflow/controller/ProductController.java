@@ -5,8 +5,11 @@ import com.stockflow.domain.dto.common.PageResponseDTO;
 import com.stockflow.domain.dto.product.ProductFilterDTO;
 import com.stockflow.domain.dto.product.ProductRequestDTO;
 import com.stockflow.domain.dto.product.ProductResponseDTO;
+import com.stockflow.domain.dto.stock.StockMovementResponseDTO;
+import com.stockflow.domain.enums.MovementType;
 import com.stockflow.security.JwtTokenProvider;
 import com.stockflow.service.ProductService;
+import com.stockflow.service.StockMovementService;
 import com.stockflow.utils.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -31,6 +35,7 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
+    private final StockMovementService stockMovementService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping
@@ -91,5 +96,29 @@ public class ProductController {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
         productService.delete(tenantId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/use")
+    @Operation(summary = "\"Usei\" — 1-tap stock exit for consumption (default quantity: 1)")
+    public ResponseEntity<ApiResponseDTO<StockMovementResponseDTO>> use(
+        @PathVariable UUID id,
+        @RequestParam(defaultValue = "1") BigDecimal quantity,
+        HttpServletRequest request) {
+        var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponseDTO.ok(stockMovementService.quickExit(tenantId, userId, id, MovementType.USED, quantity)));
+    }
+
+    @PostMapping("/{id}/discard")
+    @Operation(summary = "\"Descartei\" — 1-tap stock exit for waste/expired items (default quantity: 1)")
+    public ResponseEntity<ApiResponseDTO<StockMovementResponseDTO>> discard(
+        @PathVariable UUID id,
+        @RequestParam(defaultValue = "1") BigDecimal quantity,
+        HttpServletRequest request) {
+        var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponseDTO.ok(stockMovementService.quickExit(tenantId, userId, id, MovementType.DISCARDED, quantity)));
     }
 }

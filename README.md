@@ -135,7 +135,7 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 |-------|-----------|
 | **Auth** `/api/v1/auth` | `POST /register` (cria casa nova, sem CNPJ), `POST /join` (entra numa casa existente via `inviteCode`), `POST /login`, `POST /refresh`, `POST /logout` |
 | **Company** `/api/v1/company` | `GET` (inclui `inviteCode`), `PUT`, `GET /members`, `DELETE /members/{userId}` (dono), `POST /invite-code/rotate` (dono) |
-| **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação; `mine=true` lista só os produtos cadastrados pelo usuário logado), `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
+| **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação; `mine=true` lista só os produtos cadastrados pelo usuário logado), `GET /{id}`, `PUT /{id}`, `DELETE /{id}`, `POST /{id}/use` ("Usei"), `POST /{id}/discard` ("Descartei") |
 | **User Profile** `/api/v1/users/me` | `GET`, `PUT` (altera `name`) |
 | **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `PATCH /{invoiceId}/items/{itemId}` (revisar item antes de confirmar), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
 | **Invoices** `/api/v1/invoices` | `GET`, `GET /{id}`, `POST /{id}/reject`, `DELETE /{id}` |
@@ -180,6 +180,10 @@ Entre `POST /nfce/process` (ou `/process/image`) e `POST /{invoiceId}/confirm`, 
 - `mergeIntoProductId`: troca o produto do item para um já existente no tenant — o produto antigo (se foi criado automaticamente pela nota) continua no catálogo, sem exclusão automática.
 - `quantity`: ajusta a quantidade e recalcula `totalValue` (`quantity × unitValue`).
 - `ignored: true`: exclui o item da confirmação — ao confirmar a nota, nenhum movimento de estoque é gerado para ele.
+
+### "Usei" e "Descartei" em 1 toque
+
+`POST /api/v1/products/{id}/use` e `POST /api/v1/products/{id}/discard` dão saída no estoque sem o contrato pesado do `/stock-movements/adjust` (que exige `type`+`unitCost`+`notes`). Só pedem `quantity` por query param, com default `1`: `POST /api/v1/products/{id}/use?quantity=2`. Geram movimento `USED`/`DISCARDED` respectivamente, com o mesmo `createdBy` dos demais movimentos. Erro `422` se a quantidade exceder o estoque atual.
 
 ### Movimentos vinculados ao usuário
 
