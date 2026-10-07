@@ -8,6 +8,7 @@ import com.stockflow.exception.BusinessException;
 import com.stockflow.mapper.InvoiceMapper;
 import com.stockflow.repository.InvoiceRepository;
 import com.stockflow.service.InvoiceService;
+import com.stockflow.service.ShoppingListService;
 import com.stockflow.service.StockMovementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class ConfirmInvoiceUseCase {
     private final InvoiceService invoiceService;
     private final InvoiceRepository invoiceRepository;
     private final StockMovementService stockMovementService;
+    private final ShoppingListService shoppingListService;
     private final InvoiceMapper invoiceMapper;
 
     @Transactional
@@ -49,6 +51,7 @@ public class ConfirmInvoiceUseCase {
                 item.getUnitValue(),
                 reference
             );
+            shoppingListService.checkByProduct(tenantId, item.getProduct().getId());
         }
 
         invoice.setStatus(InvoiceStatus.CONFIRMED);

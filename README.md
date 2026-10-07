@@ -141,6 +141,7 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 | **Invoices** `/api/v1/invoices` | `GET`, `GET /{id}`, `POST /{id}/reject`, `DELETE /{id}` |
 | **Stock Movements** `/api/v1/stock-movements` | `POST /adjust`, `GET`, `GET /product/{productId}` |
 | **Dashboard** `/api/v1/dashboard` | `GET` (KPIs, produtos mais movimentados, movimentos recentes) |
+| **Shopping List** `/api/v1/shopping-list` | `GET` (itens abaixo do mínimo + manuais), `POST` (item manual), `POST /{id}/check` (comprei), `DELETE /{id}` |
 
 ### Perfil do usuário
 
@@ -180,6 +181,15 @@ Entre `POST /nfce/process` (ou `/process/image`) e `POST /{invoiceId}/confirm`, 
 - `mergeIntoProductId`: troca o produto do item para um já existente no tenant — o produto antigo (se foi criado automaticamente pela nota) continua no catálogo, sem exclusão automática.
 - `quantity`: ajusta a quantidade e recalcula `totalValue` (`quantity × unitValue`).
 - `ignored: true`: exclui o item da confirmação — ao confirmar a nota, nenhum movimento de estoque é gerado para ele.
+
+### Lista de compras
+
+`GET /api/v1/shopping-list` devolve os itens abertos (não riscados): a cada chamada, sincroniza — cria automaticamente um item para cada produto abaixo do mínimo que ainda não tem um item aberto apontando para ele — e depois lista tudo (automáticos + manuais) ordenado por criação.
+
+- `POST /api/v1/shopping-list` adiciona um item manual (`{"name": "...", "quantity": 2}`, `quantity` opcional, sem vínculo com produto do catálogo).
+- `POST /api/v1/shopping-list/{id}/check` risca o item (marcado como comprado).
+- `DELETE /api/v1/shopping-list/{id}` remove o item da lista (soft delete).
+- Ao confirmar uma nota (`POST /api/v1/nfce/{invoiceId}/confirm`), qualquer item aberto que apontava para um dos produtos da nota é riscado automaticamente.
 
 ### "Usei" e "Descartei" em 1 toque
 

@@ -8,6 +8,7 @@ import com.stockflow.exception.BusinessException;
 import com.stockflow.mapper.InvoiceMapper;
 import com.stockflow.repository.InvoiceRepository;
 import com.stockflow.service.InvoiceService;
+import com.stockflow.service.ShoppingListService;
 import com.stockflow.service.StockMovementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class ConfirmInvoiceUseCaseTest {
     @Mock InvoiceService invoiceService;
     @Mock InvoiceRepository invoiceRepository;
     @Mock StockMovementService stockMovementService;
+    @Mock ShoppingListService shoppingListService;
     @Mock InvoiceMapper invoiceMapper;
 
     @InjectMocks ConfirmInvoiceUseCase confirmInvoiceUseCase;
@@ -89,6 +91,7 @@ class ConfirmInvoiceUseCaseTest {
         verify(stockMovementService, times(1))
             .recordEntry(eq(tenantId), eq(userId), eq(product), eq(new BigDecimal("5")),
                 eq(new BigDecimal("10.00")), anyString());
+        verify(shoppingListService, times(1)).checkByProduct(eq(tenantId), eq(product.getId()));
     }
 
     @Test

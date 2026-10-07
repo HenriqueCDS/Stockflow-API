@@ -31,4 +31,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     @Query("SELECT p FROM Product p WHERE p.tenantId = :tenantId AND p.deletedAt IS NULL ORDER BY (p.currentStock * p.averageCost) DESC")
     List<Product> findTopByTenantIdOrderByValue(UUID tenantId, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.tenantId = :tenantId AND p.deletedAt IS NULL AND p.active = true " +
+        "AND p.minimumStock > 0 AND p.currentStock <= p.minimumStock")
+    List<Product> findBelowMinimumByTenantId(UUID tenantId);
 }
