@@ -8,6 +8,5 @@ public record RegisterRequestDTO(
     @NotBlank @Size(min = 2, max = 100) String name,
     @NotBlank @Email String email,
     @NotBlank @Size(min = 8, max = 100) String password,
-    @NotBlank String companyCnpj,
-    @NotBlank @Size(min = 2, max = 100) String companyName
+    @NotBlank @Size(min = 2, max = 100) String houseName
 ) {}

@@ -37,7 +37,7 @@ Código em `src/main/java/com/stockflow`:
 | `tenant` | Isolamento multi-tenant (`TenantFilter` + `TenantContext`, tenant vem do JWT) |
 | `security` / `config` | JWT, Spring Security, CORS, Swagger, WebClient, `CorrelationIdFilter` |
 | `domain` | Entidades, DTOs e enums |
-| `repository`, `mapper`, `exception`, `utils` | Persistência, MapStruct, tratamento global de erros, utilitários (ex.: CNPJ) |
+| `repository`, `mapper`, `exception`, `utils` | Persistência, MapStruct, tratamento global de erros |
 
 **Providers fiscais:** o `FiscalService` escolhe o provider pela URL (`focusnfe.com.br` → Focus NFe; URLs `sefaz.`/`nfce.`/`portalsped.fazenda` → SEFAZ) e usa SEFAZ como fallback.
 

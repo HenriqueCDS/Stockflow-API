@@ -43,8 +43,7 @@ class AuthControllerIntegrationTest {
     @Test
     void register_shouldReturn201WithTokens() throws Exception {
         RegisterRequestDTO request = new RegisterRequestDTO(
-            "Test User", "register@test.com", "Password@123",
-            "11222333000181", "Test Company");
+            "Test User", "register@test.com", "Password@123", "Test House");
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -63,7 +63,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmailAndDeletedAtIsNull(anyString())).thenReturn(true);
 
         RegisterRequestDTO request = new RegisterRequestDTO(
-            "Name", "test@example.com", "Pass@1234", "12345678000195", "Company");
+            "Name", "test@example.com", "Pass@1234", "House");
 
         assertThatThrownBy(() -> authService.register(request))
             .isInstanceOf(DuplicateResourceException.class);

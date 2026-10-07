@@ -9,8 +9,4 @@ import java.util.UUID;
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     Optional<Company> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
-
-    boolean existsByCnpjAndDeletedAtIsNull(String cnpj);
-
-    Optional<Company> findByCnpjAndDeletedAtIsNull(String cnpj);
 }

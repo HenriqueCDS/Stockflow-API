@@ -6,7 +6,6 @@ import java.util.UUID;
 public record CompanyResponseDTO(
     UUID id,
     String name,
-    String cnpj,
     UUID tenantId,
     String email,
     String phone,

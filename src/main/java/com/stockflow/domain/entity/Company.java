@@ -9,7 +9,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "companies",
     indexes = {
-        @Index(name = "idx_companies_cnpj", columnList = "cnpj"),
         @Index(name = "idx_companies_tenant_id", columnList = "tenant_id")
     }
 )
@@ -22,9 +21,6 @@ public class Company extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false, unique = true, length = 14)
-    private String cnpj;
 
     @Column(name = "tenant_id", nullable = false, unique = true)
     private UUID tenantId;

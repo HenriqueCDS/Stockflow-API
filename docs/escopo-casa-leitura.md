@@ -139,7 +139,8 @@ Branch: `feat/pivot-casa-v1`. Cada item marcado traz o commit correspondente. It
 
 - [x] 1. (P) Corrigir contador "notas para revisar" (`FETCHED` em vez de `PENDING`) — `DashboardService`/`InvoiceRepository`. Commit: `fix(dashboard): count FETCHED invoices for the review counter`.
 - [x] 2. (P) Adicionar "gasto do mês" ao dashboard — soma de `invoices.total_value` do mês corrente. Commit: `feat(dashboard): add monthly spend`.
-- [ ] 3. (G) Remover CNPJ/empresa — migration nova, `RegisterRequestDTO`, `AuthService`, `Company`, `CompanyRepository`, `CompanyRequestDTO`/`CompanyResponseDTO`, remover `CnpjUtils` e `CnpjUtilsTest`, ajustar `AuthServiceTest`/`AuthControllerIntegrationTest`.
+- [x] 3. (G) Remover CNPJ/empresa — migration `V5__drop_company_cnpj.sql` (dropa a coluna, decisão explícita do usuário de não manter reversível), `RegisterRequestDTO` (`companyCnpj` removido, `companyName`→`houseName`), `AuthService`, `Company`, `CompanyRepository`, `CompanyRequestDTO`/`CompanyResponseDTO`, `CnpjUtils`/`CnpjUtilsTest` removidos, `AuthServiceTest`/`AuthControllerIntegrationTest` ajustados, README atualizado. 34/34 testes unitários passam (`AuthControllerIntegrationTest` continua sem rodar aqui por falta de Docker). Commit: `refactor(auth): drop CNPJ/empresa, registro cria casa sem CNPJ`.
+  - Pendente separado (não bloqueia este item): `CompanyRequestDTO`/`CompanyResponseDTO`/rota `/api/v1/company` continuam nomeados como "empresa" — renomear para "casa"/"house" fica para quando o endpoint for revisitado (cosmético, não essencial à remoção do CNPJ).
 - [ ] 4. (M) Autorização dono/membro — redefinir `UserRole` (remover `VIEWER`), aplicar `@PreAuthorize`/checagem manual.
 - [ ] 5. (M) Convite e lista de membros — `GET` de membros, convite/entrada por código, `DELETE` restrito ao dono.
 - [ ] 6. (M) Autoria dos movimentos — `createdBy`/`userId` em `StockMovement`.

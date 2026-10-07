@@ -9,7 +9,6 @@ import com.stockflow.exception.DuplicateResourceException;
 import com.stockflow.repository.CompanyRepository;
 import com.stockflow.repository.UserRepository;
 import com.stockflow.security.JwtTokenProvider;
-import com.stockflow.utils.CnpjUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -35,19 +34,10 @@ public class AuthService {
             throw new DuplicateResourceException("User", "email", request.email());
         }
 
-        String cleanCnpj = CnpjUtils.clean(request.companyCnpj());
-        if (!CnpjUtils.isValid(cleanCnpj)) {
-            throw new BusinessException("Invalid CNPJ", HttpStatus.BAD_REQUEST);
-        }
-        if (companyRepository.existsByCnpjAndDeletedAtIsNull(cleanCnpj)) {
-            throw new DuplicateResourceException("Company", "cnpj", cleanCnpj);
-        }
-
         UUID tenantId = UUID.randomUUID();
 
         Company company = Company.builder()
-            .name(request.companyName())
-            .cnpj(cleanCnpj)
+            .name(request.houseName())
             .tenantId(tenantId)
             .build();
         companyRepository.save(company);
