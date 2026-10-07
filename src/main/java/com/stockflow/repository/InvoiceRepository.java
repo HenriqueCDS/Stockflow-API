@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +27,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     @Query("SELECT COUNT(i) FROM Invoice i WHERE i.tenantId = :tenantId AND i.deletedAt IS NULL")
     long countByTenantId(UUID tenantId);
 
-    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.tenantId = :tenantId AND i.status = 'PENDING' AND i.deletedAt IS NULL")
-    long countPendingByTenantId(UUID tenantId);
+    // "FETCHED" = nota já lida mas ainda não revisada/confirmada pelo usuário ("notas para revisar" no dashboard).
+    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.tenantId = :tenantId AND i.status = 'FETCHED' AND i.deletedAt IS NULL")
+    long countAwaitingReviewByTenantId(UUID tenantId);
+
+    @Query("SELECT COALESCE(SUM(i.totalValue), 0) FROM Invoice i " +
+        "WHERE i.tenantId = :tenantId AND i.deletedAt IS NULL AND i.status = 'CONFIRMED' " +
+        "AND i.purchaseDate >= :from AND i.purchaseDate < :to")
+    BigDecimal sumConfirmedTotalValueBetween(UUID tenantId, LocalDate from, LocalDate to);
 }

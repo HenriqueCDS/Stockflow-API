@@ -137,8 +137,8 @@ Como este é o repositório da API, a tabela abaixo lista cada rota exposta hoje
 
 Branch: `feat/pivot-casa-v1`. Cada item marcado traz o commit correspondente. Itens não marcados ainda não foram iniciados.
 
-- [ ] 1. (P) Corrigir contador "notas para revisar" (`FETCHED` em vez de `PENDING`) — `DashboardService`/`InvoiceRepository`.
-- [ ] 2. (P) Adicionar "gasto do mês" ao dashboard — soma de `invoices.total_value` do mês corrente.
+- [x] 1. (P) Corrigir contador "notas para revisar" (`FETCHED` em vez de `PENDING`) — `DashboardService`/`InvoiceRepository`. Commit: `fix(dashboard): count FETCHED invoices for the review counter`.
+- [x] 2. (P) Adicionar "gasto do mês" ao dashboard — soma de `invoices.total_value` do mês corrente. Commit: `feat(dashboard): add monthly spend`.
 - [ ] 3. (G) Remover CNPJ/empresa — migration nova, `RegisterRequestDTO`, `AuthService`, `Company`, `CompanyRepository`, `CompanyRequestDTO`/`CompanyResponseDTO`, remover `CnpjUtils` e `CnpjUtilsTest`, ajustar `AuthServiceTest`/`AuthControllerIntegrationTest`.
 - [ ] 4. (M) Autorização dono/membro — redefinir `UserRole` (remover `VIEWER`), aplicar `@PreAuthorize`/checagem manual.
 - [ ] 5. (M) Convite e lista de membros — `GET` de membros, convite/entrada por código, `DELETE` restrito ao dono.

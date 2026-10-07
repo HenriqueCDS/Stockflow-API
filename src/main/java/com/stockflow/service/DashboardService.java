@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +35,11 @@ public class DashboardService {
         BigDecimal totalStockValue = productRepository.sumTotalStockValueByTenantId(tenantId);
 
         long totalInvoices = invoiceRepository.countByTenantId(tenantId);
-        long pendingInvoices = invoiceRepository.countPendingByTenantId(tenantId);
+        long pendingInvoices = invoiceRepository.countAwaitingReviewByTenantId(tenantId);
+
+        LocalDate monthStart = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate nextMonthStart = monthStart.plusMonths(1);
+        BigDecimal monthlySpend = invoiceRepository.sumConfirmedTotalValueBetween(tenantId, monthStart, nextMonthStart);
 
         List<StockMovement> recentMovements = stockMovementRepository
             .findRecentByTenantId(tenantId, PageRequest.of(0, 10));
@@ -54,6 +60,7 @@ public class DashboardService {
             totalProducts, activeProducts, lowStockProducts,
             totalStockValue != null ? totalStockValue : BigDecimal.ZERO,
             totalInvoices, pendingInvoices,
+            monthlySpend != null ? monthlySpend : BigDecimal.ZERO,
             recentDTOs, topDTOs
         );
     }
