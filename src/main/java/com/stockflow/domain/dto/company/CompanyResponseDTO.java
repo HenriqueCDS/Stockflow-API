@@ -7,6 +7,7 @@ public record CompanyResponseDTO(
     UUID id,
     String name,
     UUID tenantId,
+    String inviteCode,
     String email,
     String phone,
     String address,

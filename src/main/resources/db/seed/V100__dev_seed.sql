@@ -21,8 +21,8 @@ BEGIN
 
     -- Usuarios extras (BCrypt via pgcrypto, compativel com BCryptPasswordEncoder)
     INSERT INTO users (name, email, password_hash, role, tenant_id) VALUES
-        ('Maria Operadora', 'user@stockflow.com',   crypt('Demo@1234', gen_salt('bf', 12)), 'USER',   t),
-        ('Joao Consulta',   'viewer@stockflow.com', crypt('Demo@1234', gen_salt('bf', 12)), 'VIEWER', t)
+        ('Maria Operadora', 'user@stockflow.com',   crypt('Demo@1234', gen_salt('bf', 12)), 'MEMBER', t),
+        ('Joao Consulta',   'viewer@stockflow.com', crypt('Demo@1234', gen_salt('bf', 12)), 'MEMBER', t)
     ON CONFLICT (email) DO NOTHING;
 
     -- Notas fiscais confirmadas (total_value e recalculado ao final)

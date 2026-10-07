@@ -1,5 +1,6 @@
 package com.stockflow.service;
 
+import com.stockflow.domain.dto.auth.JoinRequestDTO;
 import com.stockflow.domain.dto.auth.LoginRequestDTO;
 import com.stockflow.domain.dto.auth.LoginResponseDTO;
 import com.stockflow.domain.dto.auth.RegisterRequestDTO;
@@ -46,7 +47,7 @@ class AuthServiceTest {
             .name("Test User")
             .email("test@example.com")
             .passwordHash("$hashed$")
-            .role(UserRole.ADMIN)
+            .role(UserRole.OWNER)
             .tenantId(tenantId)
             .active(true)
             .build();
@@ -67,6 +68,51 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.register(request))
             .isInstanceOf(DuplicateResourceException.class);
+    }
+
+    @Test
+    void join_shouldThrowWhenEmailAlreadyExists() {
+        when(userRepository.existsByEmailAndDeletedAtIsNull(anyString())).thenReturn(true);
+
+        JoinRequestDTO request = new JoinRequestDTO("Name", "test@example.com", "Pass@1234", "ABCD1234");
+
+        assertThatThrownBy(() -> authService.join(request))
+            .isInstanceOf(DuplicateResourceException.class);
+    }
+
+    @Test
+    void join_shouldThrowWhenInviteCodeInvalid() {
+        when(userRepository.existsByEmailAndDeletedAtIsNull(anyString())).thenReturn(false);
+        when(companyRepository.findByInviteCodeAndDeletedAtIsNull("BADCODE")).thenReturn(Optional.empty());
+
+        JoinRequestDTO request = new JoinRequestDTO("Name", "new@example.com", "Pass@1234", "BADCODE");
+
+        assertThatThrownBy(() -> authService.join(request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("Invalid invite code");
+    }
+
+    @Test
+    void join_shouldCreateMemberWhenInviteCodeValid() {
+        Company company = Company.builder()
+            .name("Test House")
+            .tenantId(tenantId)
+            .inviteCode("ABCD1234")
+            .build();
+
+        when(userRepository.existsByEmailAndDeletedAtIsNull(anyString())).thenReturn(false);
+        when(companyRepository.findByInviteCodeAndDeletedAtIsNull("ABCD1234")).thenReturn(Optional.of(company));
+        when(passwordEncoder.encode(anyString())).thenReturn("$hashed$");
+        when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtTokenProvider.generateAccessToken(any(), anyString(), eq("MEMBER"), any())).thenReturn("access.token.here");
+        when(jwtTokenProvider.generateRefreshToken(any(), any())).thenReturn("refresh.token.here");
+        when(jwtTokenProvider.getAccessTokenExpMs()).thenReturn(900000L);
+
+        JoinRequestDTO request = new JoinRequestDTO("New Member", "new@example.com", "Pass@1234", "ABCD1234");
+        LoginResponseDTO response = authService.join(request);
+
+        assertThat(response.role()).isEqualTo("MEMBER");
+        assertThat(response.email()).isEqualTo("new@example.com");
     }
 
     @Test

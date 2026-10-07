@@ -24,10 +24,17 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/register")
-    @Operation(summary = "Register new company + admin user")
+    @Operation(summary = "Register a new house + owner user")
     public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> register(@Valid @RequestBody RegisterRequestDTO request) {
         LoginResponseDTO response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.ok("Registered successfully", response));
+    }
+
+    @PostMapping("/join")
+    @Operation(summary = "Join an existing house using its invite code")
+    public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> join(@Valid @RequestBody JoinRequestDTO request) {
+        LoginResponseDTO response = authService.join(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.ok("Joined house successfully", response));
     }
 
     @PostMapping("/login")

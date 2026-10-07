@@ -43,7 +43,7 @@ Código em `src/main/java/com/stockflow`:
 
 **Segurança do QR Code:** a chave de 44 dígitos é extraída do QR, validada (dígito verificador mod 11) e usada para checar duplicidade antes de qualquer chamada externa. A URL só é consultada se for HTTPS, estiver em um domínio permitido (`fiscal.allowed-host-suffixes`, padrão `.gov.br,.focusnfe.com.br`, ou env `FISCAL_ALLOWED_HOST_SUFFIXES`) e resolver para IP público (proteção contra SSRF).
 
-**Modelo de dados** (migrations em `src/main/resources/db/migration`): `companies`, `users`, `products`, `invoices`, `invoice_items`, `stock_movements`. Perfis de usuário: `ADMIN`, `USER`, `VIEWER`.
+**Modelo de dados** (migrations em `src/main/resources/db/migration`): `companies` (casa), `users`, `products`, `invoices`, `invoice_items`, `stock_movements`. Perfis de usuário: `OWNER` (dono da casa, único por tenant, criado no registro) e `MEMBER` (convidado via código).
 
 Cada produto guarda o usuário que o cadastrou (`products.created_by`, V4). Produtos criados automaticamente pela NFC-e ficam vinculados ao usuário que processou a nota. Produtos anteriores à V4 ficam com `created_by` nulo.
 
@@ -86,15 +86,15 @@ Usuários de demonstração (tenant `Demo Company`), senha **`Demo@1234`**:
 
 | E-mail | Perfil |
 |--------|--------|
-| `demo@stockflow.com` | ADMIN |
-| `user@stockflow.com` | USER |
-| `viewer@stockflow.com` | VIEWER |
+| `demo@stockflow.com` | OWNER |
+| `user@stockflow.com` | MEMBER |
+| `viewer@stockflow.com` | MEMBER |
 
 > As senhas de demonstração são apenas para desenvolvimento.
 
-### Banco de dev já existente após a V4
+### Banco de dev já existente
 
-A seed `V100__dev_seed.sql` roda só no perfil `dev`. Se o banco de dev já tinha a V100 aplicada antes da V4 existir, a aplicação não sobe com `Detected resolved migration not applied to database: 4`. Não existe migration a corrigir: o banco local precisa ser recriado. Isso apaga os dados de dev, inclusive os que você tiver criado:
+A seed `V100__dev_seed.sql` roda só no perfil `dev` e foi editada no pivô "casa sem CNPJ" (papéis `USER`/`VIEWER` viraram `MEMBER`). Se o seu banco de dev já tinha a V100 antiga aplicada, o Flyway acusa `checksum mismatch` ao subir. Da mesma forma, se o banco já tinha a V100 aplicada antes de uma migration nova existir (ex.: a V4 originalmente), a aplicação não sobe com `Detected resolved migration not applied to database: N`. Em ambos os casos não existe migration que corrija isso: o banco local precisa ser recriado. Isso apaga os dados de dev, inclusive os que você tiver criado:
 
 ```bash
 docker compose down -v
@@ -133,8 +133,8 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 
 | Grupo | Endpoints |
 |-------|-----------|
-| **Auth** `/api/v1/auth` | `POST /register`, `POST /login`, `POST /refresh`, `POST /logout` |
-| **Company** `/api/v1/company` | `GET`, `PUT` |
+| **Auth** `/api/v1/auth` | `POST /register` (cria casa nova, sem CNPJ), `POST /join` (entra numa casa existente via `inviteCode`), `POST /login`, `POST /refresh`, `POST /logout` |
+| **Company** `/api/v1/company` | `GET` (inclui `inviteCode`), `PUT`, `GET /members`, `DELETE /members/{userId}` (dono), `POST /invite-code/rotate` (dono) |
 | **Products** `/api/v1/products` | `POST`, `GET` (com filtros/paginação; `mine=true` lista só os produtos cadastrados pelo usuário logado), `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
 | **User Profile** `/api/v1/users/me` | `GET`, `PUT` (altera `name`) |
 | **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
@@ -147,6 +147,15 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 `GET /api/v1/users/me` retorna `id`, `name`, `email` e `role` do usuário do token. `PUT /api/v1/users/me` recebe `{"name": "..."}` (obrigatório, até 100 caracteres) e devolve o perfil atualizado. O e-mail, o perfil de acesso e a senha não são alterados por este endpoint.
 
 Esta rota fica fora de `/api/v1/auth/**` de propósito: `/auth/**` é público no `SecurityConfig`.
+
+### Casa, convite e membros
+
+- `POST /api/v1/auth/register` cria uma casa nova (sem CNPJ, só `{"name","email","password","houseName"}`) e o usuário vira `OWNER` dela. Um código de convite (`inviteCode`) é gerado automaticamente.
+- `GET /api/v1/company` devolve o `inviteCode` atual da casa — compartilhe com quem for entrar.
+- `POST /api/v1/auth/join` recebe `{"name","email","password","inviteCode"}` e cria um usuário `MEMBER` na casa dona daquele código. É público, como o `/register`.
+- `GET /api/v1/company/members` lista os membros da casa (qualquer membro autenticado pode ver).
+- `DELETE /api/v1/company/members/{userId}` remove um membro (soft delete) — só o `OWNER` pode chamar; o próprio dono não pode se auto-remover nem remover outro `OWNER`.
+- `POST /api/v1/company/invite-code/rotate` gera um novo código, invalidando o anterior — só o `OWNER`.
 
 ### Produtos vinculados ao usuário
 

@@ -33,7 +33,7 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private UserRole role = UserRole.USER;
+    private UserRole role = UserRole.MEMBER;
 
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;

@@ -9,6 +9,7 @@ import com.stockflow.exception.DuplicateResourceException;
 import com.stockflow.repository.CompanyRepository;
 import com.stockflow.repository.UserRepository;
 import com.stockflow.security.JwtTokenProvider;
+import com.stockflow.utils.InviteCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,7 @@ public class AuthService {
         Company company = Company.builder()
             .name(request.houseName())
             .tenantId(tenantId)
+            .inviteCode(InviteCodeGenerator.generate())
             .build();
         companyRepository.save(company);
 
@@ -46,12 +48,34 @@ public class AuthService {
             .name(request.name())
             .email(request.email())
             .passwordHash(passwordEncoder.encode(request.password()))
-            .role(UserRole.ADMIN)
+            .role(UserRole.OWNER)
             .tenantId(tenantId)
             .build();
         user = userRepository.save(user);
 
-        log.info("New tenant registered: {} / user: {}", tenantId, user.getEmail());
+        log.info("New house registered: {} / owner: {}", tenantId, user.getEmail());
+        return buildLoginResponse(user);
+    }
+
+    @Transactional
+    public LoginResponseDTO join(JoinRequestDTO request) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(request.email())) {
+            throw new DuplicateResourceException("User", "email", request.email());
+        }
+
+        Company company = companyRepository.findByInviteCodeAndDeletedAtIsNull(request.inviteCode())
+            .orElseThrow(() -> new BusinessException("Invalid invite code", HttpStatus.BAD_REQUEST));
+
+        User user = User.builder()
+            .name(request.name())
+            .email(request.email())
+            .passwordHash(passwordEncoder.encode(request.password()))
+            .role(UserRole.MEMBER)
+            .tenantId(company.getTenantId())
+            .build();
+        user = userRepository.save(user);
+
+        log.info("User joined house: {} / member: {}", company.getTenantId(), user.getEmail());
         return buildLoginResponse(user);
     }
 

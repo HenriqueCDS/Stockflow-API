@@ -25,6 +25,9 @@ public class Company extends BaseEntity {
     @Column(name = "tenant_id", nullable = false, unique = true)
     private UUID tenantId;
 
+    @Column(name = "invite_code", nullable = false, unique = true, length = 10)
+    private String inviteCode;
+
     @Column(length = 100)
     private String email;
 
