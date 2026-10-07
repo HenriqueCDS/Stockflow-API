@@ -37,8 +37,9 @@ public class StockMovementController {
         @Valid @RequestBody StockAdjustmentRequestDTO body,
         HttpServletRequest request) {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponseDTO.ok(stockMovementService.adjust(tenantId, body)));
+            .body(ApiResponseDTO.ok(stockMovementService.adjust(tenantId, userId, body)));
     }
 
     @GetMapping

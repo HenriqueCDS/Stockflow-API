@@ -51,4 +51,7 @@ public class StockMovement extends BaseEntity {
 
     @Column(length = 500)
     private String notes;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
 }

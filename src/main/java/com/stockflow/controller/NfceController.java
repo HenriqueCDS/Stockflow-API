@@ -79,7 +79,8 @@ public class NfceController {
         @PathVariable UUID invoiceId,
         HttpServletRequest request) {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
-        InvoiceResponseDTO invoice = confirmInvoiceUseCase.execute(tenantId, invoiceId);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
+        InvoiceResponseDTO invoice = confirmInvoiceUseCase.execute(tenantId, userId, invoiceId);
         return ResponseEntity.ok(ApiResponseDTO.ok("Invoice confirmed and stock updated", invoice));
     }
 

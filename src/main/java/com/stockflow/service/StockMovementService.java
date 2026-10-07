@@ -28,7 +28,7 @@ public class StockMovementService {
     private final StockMovementMapper stockMovementMapper;
 
     @Transactional
-    public StockMovement recordEntry(UUID tenantId, Product product, BigDecimal quantity,
+    public StockMovement recordEntry(UUID tenantId, UUID userId, Product product, BigDecimal quantity,
                                      BigDecimal unitCost, String reference) {
         BigDecimal stockBefore = product.getCurrentStock();
         product.updateAverageCost(quantity, unitCost);
@@ -42,14 +42,15 @@ public class StockMovementService {
             .stockBefore(stockBefore)
             .stockAfter(product.getCurrentStock())
             .reference(reference)
+            .createdBy(userId)
             .build();
 
-        log.info("Stock entry: product={}, qty={}, ref={}", product.getId(), quantity, reference);
+        log.info("Stock entry: product={}, qty={}, ref={}, createdBy={}", product.getId(), quantity, reference, userId);
         return stockMovementRepository.save(movement);
     }
 
     @Transactional
-    public StockMovementResponseDTO adjust(UUID tenantId, StockAdjustmentRequestDTO request) {
+    public StockMovementResponseDTO adjust(UUID tenantId, UUID userId, StockAdjustmentRequestDTO request) {
         Product product = productService.findByTenantAndId(tenantId, request.productId());
         BigDecimal stockBefore = product.getCurrentStock();
 
@@ -72,6 +73,7 @@ public class StockMovementService {
             .stockBefore(stockBefore)
             .stockAfter(product.getCurrentStock())
             .notes(request.notes())
+            .createdBy(userId)
             .build();
 
         return stockMovementMapper.toResponse(stockMovementRepository.save(movement));

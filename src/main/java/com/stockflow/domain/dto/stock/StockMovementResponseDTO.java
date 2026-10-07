@@ -17,5 +17,6 @@ public record StockMovementResponseDTO(
     BigDecimal stockAfter,
     String reference,
     String notes,
+    UUID createdBy,
     LocalDateTime createdAt
 ) {}

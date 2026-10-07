@@ -163,6 +163,10 @@ Esta rota fica fora de `/api/v1/auth/**` de propósito: `/auth/**` é público n
 - `GET /api/v1/products?mine=true` lista só os produtos cadastrados pelo usuário logado. Pode ser combinado com os demais filtros e com a paginação.
 - Edição e exclusão não são restritas ao criador: qualquer usuário do tenant continua podendo alterar ou excluir produtos de outros usuários.
 
+### Movimentos vinculados ao usuário
+
+`POST /api/v1/stock-movements/adjust` e a confirmação de nota (`POST /api/v1/nfce/{id}/confirm`) gravam o usuário do token em `createdBy`. O campo aparece em `GET /api/v1/stock-movements` e `GET /api/v1/stock-movements/product/{productId}`; vem `null` para movimentos criados antes dessa coluna existir (V8).
+
 ### Exemplo rápido
 
 ```bash

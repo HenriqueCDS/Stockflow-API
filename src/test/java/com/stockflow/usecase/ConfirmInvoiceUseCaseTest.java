@@ -35,6 +35,7 @@ class ConfirmInvoiceUseCaseTest {
     @InjectMocks ConfirmInvoiceUseCase confirmInvoiceUseCase;
 
     private UUID tenantId;
+    private UUID userId;
     private UUID invoiceId;
     private Invoice invoice;
     private Product product;
@@ -42,6 +43,7 @@ class ConfirmInvoiceUseCaseTest {
     @BeforeEach
     void setUp() {
         tenantId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         invoiceId = UUID.randomUUID();
 
         product = Product.builder()
@@ -71,7 +73,7 @@ class ConfirmInvoiceUseCaseTest {
         invoice.setStatus(InvoiceStatus.CONFIRMED);
         when(invoiceService.findByTenantAndId(any(), any())).thenReturn(invoice);
 
-        assertThatThrownBy(() -> confirmInvoiceUseCase.execute(tenantId, invoiceId))
+        assertThatThrownBy(() -> confirmInvoiceUseCase.execute(tenantId, userId, invoiceId))
             .isInstanceOf(BusinessException.class)
             .hasMessageContaining("FETCHED");
     }
@@ -82,10 +84,10 @@ class ConfirmInvoiceUseCaseTest {
         when(invoiceRepository.save(any())).thenReturn(invoice);
         when(invoiceMapper.toResponse(any())).thenReturn(null);
 
-        confirmInvoiceUseCase.execute(tenantId, invoiceId);
+        confirmInvoiceUseCase.execute(tenantId, userId, invoiceId);
 
         verify(stockMovementService, times(1))
-            .recordEntry(eq(tenantId), eq(product), eq(new BigDecimal("5")),
+            .recordEntry(eq(tenantId), eq(userId), eq(product), eq(new BigDecimal("5")),
                 eq(new BigDecimal("10.00")), anyString());
     }
 
@@ -94,7 +96,7 @@ class ConfirmInvoiceUseCaseTest {
         when(invoiceService.findByTenantAndId(any(), any())).thenReturn(invoice);
         when(invoiceRepository.save(any())).thenReturn(invoice);
 
-        confirmInvoiceUseCase.execute(tenantId, invoiceId);
+        confirmInvoiceUseCase.execute(tenantId, userId, invoiceId);
 
         verify(invoiceRepository).save(argThat(inv -> inv.getStatus() == InvoiceStatus.CONFIRMED));
     }

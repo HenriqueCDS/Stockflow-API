@@ -28,7 +28,7 @@ public class ConfirmInvoiceUseCase {
     private final InvoiceMapper invoiceMapper;
 
     @Transactional
-    public InvoiceResponseDTO execute(UUID tenantId, UUID invoiceId) {
+    public InvoiceResponseDTO execute(UUID tenantId, UUID userId, UUID invoiceId) {
         Invoice invoice = invoiceService.findByTenantAndId(tenantId, invoiceId);
 
         if (invoice.getStatus() != InvoiceStatus.FETCHED) {
@@ -43,6 +43,7 @@ public class ConfirmInvoiceUseCase {
             if (item.getProduct() == null) continue;
             stockMovementService.recordEntry(
                 tenantId,
+                userId,
                 item.getProduct(),
                 item.getQuantity(),
                 item.getUnitValue(),
