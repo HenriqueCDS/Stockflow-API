@@ -53,6 +53,9 @@ public class Product extends BaseEntity {
     @Builder.Default
     private boolean active = true;
 
+    @Column(name = "created_by")
+    private UUID createdBy;
+
     public void updateAverageCost(BigDecimal entryQuantity, BigDecimal entryUnitCost) {
         BigDecimal totalCurrentValue = this.currentStock.multiply(this.averageCost);
         BigDecimal totalEntryValue = entryQuantity.multiply(entryUnitCost);

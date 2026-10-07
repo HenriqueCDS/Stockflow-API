@@ -39,8 +39,9 @@ public class ProductController {
         @Valid @RequestBody ProductRequestDTO body,
         HttpServletRequest request) {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        var userId = SecurityUtils.getCurrentUserId(jwtTokenProvider, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponseDTO.ok(productService.create(tenantId, body)));
+            .body(ApiResponseDTO.ok(productService.create(tenantId, userId, body)));
     }
 
     @GetMapping
@@ -54,10 +55,14 @@ public class ProductController {
         @RequestParam(required = false) String category,
         @RequestParam(required = false) Boolean active,
         @RequestParam(required = false) Boolean belowMinimum,
+        @RequestParam(required = false) Boolean mine,
         HttpServletRequest request) {
         var tenantId = SecurityUtils.getCurrentTenantId(jwtTokenProvider, request);
+        UUID createdBy = Boolean.TRUE.equals(mine)
+            ? SecurityUtils.getCurrentUserId(jwtTokenProvider, request)
+            : null;
         Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(sort));
-        ProductFilterDTO filter = new ProductFilterDTO(name, ean, category, active, belowMinimum);
+        ProductFilterDTO filter = new ProductFilterDTO(name, ean, category, active, belowMinimum, createdBy);
         return ResponseEntity.ok(ApiResponseDTO.ok(productService.list(tenantId, filter, pageable)));
     }
 

@@ -35,7 +35,7 @@ public class ProcessNfceUseCase {
     private final InvoiceMapper invoiceMapper;
 
     @Transactional
-    public InvoiceResponseDTO execute(UUID tenantId, String qrCodeContent) {
+    public InvoiceResponseDTO execute(UUID tenantId, UUID userId, String qrCodeContent) {
         // The key embedded in the QR is authoritative: validate it and dedupe before any external call.
         NfceKey qrKey = NfceKey.extractRaw(qrCodeContent)
             .map(raw -> NfceKey.parse(raw).orElseThrow(() ->
@@ -69,7 +69,7 @@ public class ProcessNfceUseCase {
             .status(InvoiceStatus.FETCHED)
             .build();
 
-        List<InvoiceItem> items = buildItems(tenantId, invoice, nfceData.getItems());
+        List<InvoiceItem> items = buildItems(tenantId, userId, invoice, nfceData.getItems());
         invoice.setItems(items);
 
         invoice = invoiceRepository.save(invoice);
@@ -78,13 +78,13 @@ public class ProcessNfceUseCase {
         return invoiceMapper.toResponse(invoice);
     }
 
-    private List<InvoiceItem> buildItems(UUID tenantId, Invoice invoice, List<NfceItemDTO> nfceItems) {
+    private List<InvoiceItem> buildItems(UUID tenantId, UUID userId, Invoice invoice, List<NfceItemDTO> nfceItems) {
         List<InvoiceItem> items = new ArrayList<>();
         if (nfceItems == null) return items;
 
         for (NfceItemDTO nfceItem : nfceItems) {
             Product product = productService.findOrCreateByEan(
-                tenantId, nfceItem.getEan(), nfceItem.getName(), nfceItem.getUnit());
+                tenantId, userId, nfceItem.getEan(), nfceItem.getName(), nfceItem.getUnit());
 
             InvoiceItem item = InvoiceItem.builder()
                 .invoice(invoice)

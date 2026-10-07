@@ -16,5 +16,6 @@ public record ProductResponseDTO(
     BigDecimal totalValue,
     boolean active,
     boolean belowMinimum,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    UUID createdBy
 ) {}
