@@ -52,7 +52,6 @@ class ConfirmInvoiceUseCaseTest {
             .tenantId(tenantId)
             .name("Test Product")
             .currentStock(BigDecimal.ZERO)
-            .averageCost(BigDecimal.ZERO)
             .build();
 
         InvoiceItem item = InvoiceItem.builder()
@@ -89,8 +88,7 @@ class ConfirmInvoiceUseCaseTest {
         confirmInvoiceUseCase.execute(tenantId, userId, invoiceId);
 
         verify(stockMovementService, times(1))
-            .recordEntry(eq(tenantId), eq(userId), eq(product), eq(new BigDecimal("5")),
-                eq(new BigDecimal("10.00")), anyString());
+            .recordEntry(eq(tenantId), eq(userId), eq(product), eq(new BigDecimal("5")), anyString());
         verify(shoppingListService, times(1)).checkByProduct(eq(tenantId), eq(product.getId()));
     }
 

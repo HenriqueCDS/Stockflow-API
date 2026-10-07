@@ -7,10 +7,8 @@ public record DashboardDTO(
     long totalProducts,
     long activeProducts,
     long lowStockProducts,
-    BigDecimal totalStockValue,
     long totalInvoices,
     long pendingInvoices,
     BigDecimal monthlySpend,
-    List<RecentMovementDTO> recentMovements,
-    List<TopProductDTO> topProducts
+    List<RecentMovementDTO> recentMovements
 ) {}

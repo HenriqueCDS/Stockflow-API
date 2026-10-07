@@ -11,6 +11,5 @@ public record StockAdjustmentRequestDTO(
     @NotNull UUID productId,
     @NotNull MovementType type,
     @NotNull @Positive BigDecimal quantity,
-    BigDecimal unitCost,
     String notes
 ) {}

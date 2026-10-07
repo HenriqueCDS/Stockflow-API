@@ -37,9 +37,6 @@ public class StockMovement extends BaseEntity {
     @Column(nullable = false, precision = 15, scale = 4)
     private BigDecimal quantity;
 
-    @Column(name = "unit_cost", precision = 15, scale = 4)
-    private BigDecimal unitCost;
-
     @Column(name = "stock_before", precision = 15, scale = 4)
     private BigDecimal stockBefore;
 

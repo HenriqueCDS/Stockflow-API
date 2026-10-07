@@ -43,7 +43,6 @@ class StockMovementServiceTest {
             .tenantId(tenantId)
             .name("Test Product")
             .currentStock(BigDecimal.TEN)
-            .averageCost(BigDecimal.ONE)
             .build();
     }
 
@@ -52,7 +51,7 @@ class StockMovementServiceTest {
         when(stockMovementRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         StockMovement movement = stockMovementService.recordEntry(
-            tenantId, userId, product, new BigDecimal("5"), new BigDecimal("10.00"), "ref");
+            tenantId, userId, product, new BigDecimal("5"), "ref");
 
         assertThat(movement.getCreatedBy()).isEqualTo(userId);
         assertThat(movement.getType()).isEqualTo(MovementType.ENTRY);
@@ -64,7 +63,7 @@ class StockMovementServiceTest {
         when(stockMovementRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         StockAdjustmentRequestDTO request = new StockAdjustmentRequestDTO(
-            null, MovementType.ADJUSTMENT, new BigDecimal("3"), null, "ajuste");
+            null, MovementType.ADJUSTMENT, new BigDecimal("3"), "ajuste");
 
         stockMovementService.adjust(tenantId, userId, request);
 

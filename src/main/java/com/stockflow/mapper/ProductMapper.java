@@ -11,21 +11,18 @@ public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "currentStock", ignore = true)
-    @Mapping(target = "averageCost", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     Product toEntity(ProductRequestDTO dto);
 
-    @Mapping(target = "totalValue", expression = "java(product.getCurrentStock().multiply(product.getAverageCost()))")
     @Mapping(target = "belowMinimum", expression = "java(product.getMinimumStock() != null && product.getMinimumStock().compareTo(java.math.BigDecimal.ZERO) > 0 && product.getCurrentStock().compareTo(product.getMinimumStock()) <= 0)")
     ProductResponseDTO toResponse(Product product);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "currentStock", ignore = true)
-    @Mapping(target = "averageCost", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)

@@ -41,10 +41,6 @@ public class Product extends BaseEntity {
     @Builder.Default
     private BigDecimal currentStock = BigDecimal.ZERO;
 
-    @Column(name = "average_cost", nullable = false, precision = 15, scale = 4)
-    @Builder.Default
-    private BigDecimal averageCost = BigDecimal.ZERO;
-
     @Column(name = "minimum_stock", precision = 15, scale = 4)
     @Builder.Default
     private BigDecimal minimumStock = BigDecimal.ZERO;
@@ -56,15 +52,7 @@ public class Product extends BaseEntity {
     @Column(name = "created_by")
     private UUID createdBy;
 
-    public void updateAverageCost(BigDecimal entryQuantity, BigDecimal entryUnitCost) {
-        BigDecimal totalCurrentValue = this.currentStock.multiply(this.averageCost);
-        BigDecimal totalEntryValue = entryQuantity.multiply(entryUnitCost);
-        BigDecimal newTotalStock = this.currentStock.add(entryQuantity);
-
-        if (newTotalStock.compareTo(BigDecimal.ZERO) > 0) {
-            this.averageCost = totalCurrentValue.add(totalEntryValue)
-                .divide(newTotalStock, 4, java.math.RoundingMode.HALF_UP);
-        }
-        this.currentStock = newTotalStock;
+    public void addStock(BigDecimal quantity) {
+        this.currentStock = this.currentStock.add(quantity);
     }
 }

@@ -12,7 +12,6 @@ public record StockMovementResponseDTO(
     String productName,
     MovementType type,
     BigDecimal quantity,
-    BigDecimal unitCost,
     BigDecimal stockBefore,
     BigDecimal stockAfter,
     String reference,

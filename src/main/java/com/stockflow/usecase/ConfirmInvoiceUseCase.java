@@ -48,7 +48,6 @@ public class ConfirmInvoiceUseCase {
                 userId,
                 item.getProduct(),
                 item.getQuantity(),
-                item.getUnitValue(),
                 reference
             );
             shoppingListService.checkByProduct(tenantId, item.getProduct().getId());

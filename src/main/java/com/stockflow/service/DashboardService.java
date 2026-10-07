@@ -2,8 +2,6 @@ package com.stockflow.service;
 
 import com.stockflow.domain.dto.dashboard.DashboardDTO;
 import com.stockflow.domain.dto.dashboard.RecentMovementDTO;
-import com.stockflow.domain.dto.dashboard.TopProductDTO;
-import com.stockflow.domain.entity.Product;
 import com.stockflow.domain.entity.StockMovement;
 import com.stockflow.repository.InvoiceRepository;
 import com.stockflow.repository.ProductRepository;
@@ -32,7 +30,6 @@ public class DashboardService {
         long totalProducts = productRepository.countByTenantIdAndDeletedAtIsNull(tenantId);
         long activeProducts = productRepository.countActiveByTenantId(tenantId);
         long lowStockProducts = productRepository.countLowStockByTenantId(tenantId);
-        BigDecimal totalStockValue = productRepository.sumTotalStockValueByTenantId(tenantId);
 
         long totalInvoices = invoiceRepository.countByTenantId(tenantId);
         long pendingInvoices = invoiceRepository.countAwaitingReviewByTenantId(tenantId);
@@ -48,20 +45,11 @@ public class DashboardService {
                 m.getId(), m.getProduct().getName(), m.getType(), m.getQuantity(), m.getCreatedAt()))
             .toList();
 
-        List<Product> topProducts = productRepository
-            .findTopByTenantIdOrderByValue(tenantId, PageRequest.of(0, 5));
-        List<TopProductDTO> topDTOs = topProducts.stream()
-            .map(p -> new TopProductDTO(
-                p.getId(), p.getName(), p.getCurrentStock(),
-                p.getCurrentStock().multiply(p.getAverageCost())))
-            .toList();
-
         return new DashboardDTO(
             totalProducts, activeProducts, lowStockProducts,
-            totalStockValue != null ? totalStockValue : BigDecimal.ZERO,
             totalInvoices, pendingInvoices,
             monthlySpend != null ? monthlySpend : BigDecimal.ZERO,
-            recentDTOs, topDTOs
+            recentDTOs
         );
     }
 }

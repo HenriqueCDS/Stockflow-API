@@ -43,7 +43,6 @@ class ProductServiceTest {
             .name("Test Product")
             .ean("7891234567890")
             .currentStock(BigDecimal.TEN)
-            .averageCost(new BigDecimal("5.50"))
             .build();
         try {
             var idField = testProduct.getClass().getSuperclass().getDeclaredField("id");
@@ -68,7 +67,7 @@ class ProductServiceTest {
         ProductRequestDTO request = new ProductRequestDTO("New Product", "1234567890123", null, "UN", BigDecimal.ZERO);
         ProductResponseDTO expectedResponse = new ProductResponseDTO(
             UUID.randomUUID(), "New Product", "1234567890123", null, "UN",
-            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            BigDecimal.ZERO, BigDecimal.ZERO,
             true, false, null, userId);
 
         when(productRepository.findByTenantIdAndEanAndDeletedAtIsNull(any(), anyString()))
@@ -125,15 +124,13 @@ class ProductServiceTest {
     }
 
     @Test
-    void updateAverageCost_shouldCalculateCorrectly() {
+    void addStock_shouldIncreaseCurrentStock() {
         Product product = Product.builder()
             .currentStock(new BigDecimal("10"))
-            .averageCost(new BigDecimal("5.00"))
             .build();
 
-        product.updateAverageCost(new BigDecimal("10"), new BigDecimal("7.00"));
+        product.addStock(new BigDecimal("5"));
 
-        assertThat(product.getCurrentStock()).isEqualByComparingTo("20");
-        assertThat(product.getAverageCost()).isEqualByComparingTo("6.0000");
+        assertThat(product.getCurrentStock()).isEqualByComparingTo("15");
     }
 }

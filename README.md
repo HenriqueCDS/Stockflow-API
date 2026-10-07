@@ -140,7 +140,7 @@ Todos os endpoints exigem `Authorization: Bearer <token>`, exceto `/api/v1/auth/
 | **NFC-e** `/api/v1/nfce` | `POST /process` (JSON `{"qrCode": "..."}`), `POST /process/image` (multipart `file`, até 5MB), `PATCH /{invoiceId}/items/{itemId}` (revisar item antes de confirmar), `POST /{invoiceId}/confirm`, `POST /{invoiceId}/reject` |
 | **Invoices** `/api/v1/invoices` | `GET`, `GET /{id}`, `POST /{id}/reject`, `DELETE /{id}` |
 | **Stock Movements** `/api/v1/stock-movements` | `POST /adjust`, `GET`, `GET /product/{productId}` |
-| **Dashboard** `/api/v1/dashboard` | `GET` (KPIs, produtos mais movimentados, movimentos recentes) |
+| **Dashboard** `/api/v1/dashboard` | `GET` (total/ativos/abaixo do mínimo, notas para revisar, gasto do mês, movimentos recentes) |
 | **Shopping List** `/api/v1/shopping-list` | `GET` (itens abaixo do mínimo + manuais), `POST` (item manual), `POST /{id}/check` (comprei), `DELETE /{id}` |
 
 ### Perfil do usuário
@@ -193,7 +193,7 @@ Entre `POST /nfce/process` (ou `/process/image`) e `POST /{invoiceId}/confirm`, 
 
 ### "Usei" e "Descartei" em 1 toque
 
-`POST /api/v1/products/{id}/use` e `POST /api/v1/products/{id}/discard` dão saída no estoque sem o contrato pesado do `/stock-movements/adjust` (que exige `type`+`unitCost`+`notes`). Só pedem `quantity` por query param, com default `1`: `POST /api/v1/products/{id}/use?quantity=2`. Geram movimento `USED`/`DISCARDED` respectivamente, com o mesmo `createdBy` dos demais movimentos. Erro `422` se a quantidade exceder o estoque atual.
+`POST /api/v1/products/{id}/use` e `POST /api/v1/products/{id}/discard` dão saída no estoque sem o contrato do `/stock-movements/adjust` (que exige `type`+`notes`). Só pedem `quantity` por query param, com default `1`: `POST /api/v1/products/{id}/use?quantity=2`. Geram movimento `USED`/`DISCARDED` respectivamente, com o mesmo `createdBy` dos demais movimentos. Erro `422` se a quantidade exceder o estoque atual.
 
 ### Movimentos vinculados ao usuário
 

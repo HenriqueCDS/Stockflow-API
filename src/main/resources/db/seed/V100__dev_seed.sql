@@ -55,8 +55,8 @@ BEGIN
             ('Banana Prata',            NULL,            'Hortifruti', 'KG',   45,  5.20,  30, 10, 'B')
         ) AS v(name, ean, category, unit, bought, cost, sold, min_stock, inv)
     LOOP
-        INSERT INTO products (tenant_id, name, ean, category, unit, current_stock, average_cost, minimum_stock, created_at)
-        VALUES (t, p.name, p.ean, p.category, p.unit, 0, p.cost, p.min_stock, NOW() - INTERVAL '30 days')
+        INSERT INTO products (tenant_id, name, ean, category, unit, current_stock, minimum_stock, created_at)
+        VALUES (t, p.name, p.ean, p.category, p.unit, 0, p.min_stock, NOW() - INTERVAL '30 days')
         RETURNING id INTO pid;
 
         inv_id := CASE p.inv WHEN 'A' THEN inv_a ELSE inv_b END;
@@ -66,31 +66,31 @@ BEGIN
         VALUES (inv_id, pid, p.name, p.ean, p.bought, p.cost, ROUND(p.bought * p.cost, 2), p.unit);
 
         -- Entrada via nota fiscal
-        INSERT INTO stock_movements (tenant_id, product_id, type, quantity, unit_cost, stock_before, stock_after, reference, notes, created_at)
-        VALUES (t, pid, 'ENTRY', p.bought, p.cost, 0, p.bought,
+        INSERT INTO stock_movements (tenant_id, product_id, type, quantity, stock_before, stock_after, reference, notes, created_at)
+        VALUES (t, pid, 'ENTRY', p.bought, 0, p.bought,
                 'NFC-e ' || CASE p.inv WHEN 'A' THEN '12341' ELSE '56781' END, 'Entrada por nota fiscal',
                 NOW() - CASE p.inv WHEN 'A' THEN INTERVAL '20 days' ELSE INTERVAL '10 days' END);
         stock := p.bought;
 
-        -- Saida (vendas)
-        INSERT INTO stock_movements (tenant_id, product_id, type, quantity, unit_cost, stock_before, stock_after, reference, notes, created_at)
-        VALUES (t, pid, 'EXIT', p.sold, p.cost, stock, stock - p.sold, 'Vendas PDV', 'Saida acumulada de vendas',
+        -- Saida (consumo)
+        INSERT INTO stock_movements (tenant_id, product_id, type, quantity, stock_before, stock_after, reference, notes, created_at)
+        VALUES (t, pid, 'USED', p.sold, stock, stock - p.sold, NULL, 'Consumo acumulado',
                 NOW() - INTERVAL '3 days' - (day_off || ' hours')::INTERVAL);
         stock := stock - p.sold;
 
         UPDATE products SET current_stock = stock WHERE id = pid;
     END LOOP;
 
-    -- Um ajuste e uma devolucao para variar os tipos de movimento
+    -- Um ajuste e um descarte para variar os tipos de movimento
     SELECT id, current_stock INTO pid, stock FROM products WHERE tenant_id = t AND name = 'Sabonete 90g';
-    INSERT INTO stock_movements (tenant_id, product_id, type, quantity, unit_cost, stock_before, stock_after, reference, notes)
-    VALUES (t, pid, 'ADJUSTMENT', -2, 1.89, stock, stock - 2, 'Inventario', 'Perda identificada no inventario');
+    INSERT INTO stock_movements (tenant_id, product_id, type, quantity, stock_before, stock_after, reference, notes)
+    VALUES (t, pid, 'ADJUSTMENT', -2, stock, stock - 2, 'Inventario', 'Correcao de contagem');
     UPDATE products SET current_stock = stock - 2 WHERE id = pid;
 
     SELECT id, current_stock INTO pid, stock FROM products WHERE tenant_id = t AND name = 'Leite Integral 1L';
-    INSERT INTO stock_movements (tenant_id, product_id, type, quantity, unit_cost, stock_before, stock_after, reference, notes)
-    VALUES (t, pid, 'RETURN', 3, 4.60, stock, stock + 3, 'Devolucao cliente', 'Devolucao de produto');
-    UPDATE products SET current_stock = stock + 3 WHERE id = pid;
+    INSERT INTO stock_movements (tenant_id, product_id, type, quantity, stock_before, stock_after, reference, notes)
+    VALUES (t, pid, 'DISCARDED', 1, stock, stock - 1, NULL, 'Venceu');
+    UPDATE products SET current_stock = stock - 1 WHERE id = pid;
 
     -- Totais das notas = soma dos itens
     UPDATE invoices i SET total_value = (SELECT COALESCE(SUM(total_value), 0) FROM invoice_items WHERE invoice_id = i.id)
